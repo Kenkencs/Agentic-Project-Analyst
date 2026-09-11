@@ -3,6 +3,8 @@ import os
 
 from dotenv import load_dotenv
 from product_tools import search_feedback 
+from product_tools import calculate_priority
+from agents import SQLiteSession
 from agents import (
     Agent,
     Runner,
@@ -25,6 +27,11 @@ model = OpenAIChatCompletionsModel(
     openai_client=client,
 )
 
+session = SQLiteSession(
+    "product_analyst_day3",
+    "conversations.db"
+)
+
 set_tracing_disabled(True)
 
 agent = Agent(
@@ -42,12 +49,16 @@ agent = Agent(
     is genuinely required.
     """,
     model=model,
-    tools=[search_feedback],
+    tools=[search_feedback,calculate_priority]
 )
 
 result = Runner.run_sync(
     agent,
-    "What are students complaining about regarding tasks?",
+    #"What are students complaining about regarding tasks?",
+    #"A feature has impact 8, confidence 7 and effort 4.What is its priority score?",
+    "agent , what is my product called ,and what does the problem that it can solve",
+    session= session
+    
 )
 
 print(result.final_output)

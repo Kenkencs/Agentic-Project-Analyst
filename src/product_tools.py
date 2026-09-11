@@ -23,3 +23,19 @@ def search_feedback(query: str) -> str:
     return "\n".join(feedback)
 
 
+@function_tool
+def calculate_priority(
+    impact: int,
+    confidence: int,
+    effort: int,
+) -> float:
+    """
+    Calculate a product feature priority score
+
+    Args:
+        impact: Expected impact from 1 to 10.
+        confidence: Confidence from 1 to 10.
+        effort: Estimated implementation effort from 1 to 10.
+    """
+
+    return (impact * confidence) / effort
