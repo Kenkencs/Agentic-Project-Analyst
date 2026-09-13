@@ -2,79 +2,57 @@
 import os
 
 from dotenv import load_dotenv
-from product_tools import search_feedback 
-from product_tools import calculate_priority
-from agents import SQLiteSession
-from agents import OpenAIResponsesModel
-from model import ProductAnalysis
-from agents import (
-    Agent,
-    Runner,
-    AsyncOpenAI,
-    #OpenAIChatCompletionsModel,
-    OpenAIResponsesModel,
-    set_tracing_disabled
-)
+from openai import OpenAI
+
+from rag import retrieve
 
 load_dotenv()
 
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
-client = AsyncOpenAI(
+rag_client = OpenAI(
     api_key=deepseek_api_key,
     base_url="https://api.deepseek.com",
 )
 
-model = OpenAIResponsesModel(
+query = "Why are students struggling with too much workload?"
+
+results = retrieve(query)
+
+context = "\n".join(
+    f"- {result}"
+    for result in results
+)
+
+prompt = f"""
+You are a product analyst.
+
+Answer the question using only the retrieved context below.
+
+Retrieved context:
+{context}
+
+Question:
+{query}
+
+If the retrieved context does not contain enough evidence,
+say that there is not enough information.
+"""
+
+response = rag_client.chat.completions.create(
     model="deepseek-v4-flash",
-    openai_client=client,
+    messages=[
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    ],
 )
 
-session = SQLiteSession(
-    "product_analyst_day3",
-    "conversations.db"
-)
+answer = response.choices[0].message.content
 
-set_tracing_disabled(True)
+print("RETRIEVED CONTEXT:")
+print(context)
 
-agent = Agent(
-    name="Product Analyst",
-    instructions="""
-    You are an AI product analyst.
-
-    When the user asks about user complaints or user feedback,
-    use search_feedback to retrieve evidence.
-
-    After receiving the feedback from the tool,
-    analyze the returned evidence and give the user a final answer.
-
-    Do not repeatedly call the same tool unless additional information
-    is genuinely required.
-    """,
-    model=model,
-    #tools=[search_feedback,calculate_priority],
-    output_type=ProductAnalysis ,
-)
-
-result = Runner.run_sync(
-    agent,
-    #"What are students complaining about regarding tasks?",
-    #"A feature has impact 8, confidence 7 and effort 4.What is its priority score?",
-    #"agent , what is my product called ,and what does the problem that it can solve",
-    "Analyze the problem of students abandoning overloaded study plans.",
-    #session= session
-    
-)
-
-
-print(result.final_output)
-#print(type(result.final_output))
-
-
-def main() -> None:
-    """Run the project analyst."""
-    print("Agentic Project Analyst is ready.")
-
-
-if __name__ == "__main__":
-    main()
+print("\nANSWER:")
+print(answer)
