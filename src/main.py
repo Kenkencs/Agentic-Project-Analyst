@@ -5,12 +5,15 @@ from dotenv import load_dotenv
 from product_tools import search_feedback 
 from product_tools import calculate_priority
 from agents import SQLiteSession
+from agents import OpenAIResponsesModel
+from model import ProductAnalysis
 from agents import (
     Agent,
     Runner,
     AsyncOpenAI,
-    OpenAIChatCompletionsModel,
-    set_tracing_disabled,
+    #OpenAIChatCompletionsModel,
+    OpenAIResponsesModel,
+    set_tracing_disabled
 )
 
 load_dotenv()
@@ -22,7 +25,7 @@ client = AsyncOpenAI(
     base_url="https://api.deepseek.com",
 )
 
-model = OpenAIChatCompletionsModel(
+model = OpenAIResponsesModel(
     model="deepseek-v4-flash",
     openai_client=client,
 )
@@ -49,19 +52,23 @@ agent = Agent(
     is genuinely required.
     """,
     model=model,
-    tools=[search_feedback,calculate_priority]
+    #tools=[search_feedback,calculate_priority],
+    output_type=ProductAnalysis ,
 )
 
 result = Runner.run_sync(
     agent,
     #"What are students complaining about regarding tasks?",
     #"A feature has impact 8, confidence 7 and effort 4.What is its priority score?",
-    "agent , what is my product called ,and what does the problem that it can solve",
-    session= session
+    #"agent , what is my product called ,and what does the problem that it can solve",
+    "Analyze the problem of students abandoning overloaded study plans.",
+    #session= session
     
 )
 
+
 print(result.final_output)
+#print(type(result.final_output))
 
 
 def main() -> None:
