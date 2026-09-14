@@ -1,5 +1,7 @@
 from agents import function_tool
 
+from src.rag import retrieve
+
 
 @function_tool
 def search_feedback(query: str) -> str:
@@ -39,3 +41,29 @@ def calculate_priority(
     """
 
     return (impact * confidence) / effort
+
+
+@function_tool
+def search_product_knowledge(query: str) -> str:
+    """
+    Search the product knowledge base for information relevant
+    to the user's question.
+
+    Use this tool when the question requires evidence from
+    product feedback or internal product knowledge.
+
+    Args:
+        query: The product topic or question to search for.
+    """
+
+    print(f"\n[RAG TOOL CALLED] query={query}")
+
+    results = retrieve(query)
+
+    if not results:
+        return "No sufficiently relevant product information was found."
+
+    return "\n".join(
+        f"- {result}"
+        for result in results
+    )
